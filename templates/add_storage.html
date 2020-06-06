@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" class="x-admin-sm">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+	<title>注册</title>
+	<meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+{#    <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />#}
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <link rel="stylesheet" href="/static/css/font.css">
+    <link rel="stylesheet" href="/static/css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/static/js/xadmin.js"></script>
+</head>
+<body>
+<div class="x-nav">
+            <span class="layui-breadcrumb">
+                <a href="">首页</a>
+                <a href="">存证管理</a>
+                <a>
+                    <cite>信息存证</cite></a>
+            </span>
+            <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right" onclick="location.reload()" title="刷新">
+                <i class="layui-icon layui-icon-refresh" style="line-height:30px"></i>
+            </a>
+        </div>
+<div class="wrapper" style="width: 900px;margin-top: 40px">
+    <fieldset class="layui-elem-field layui-field-title">
+        <legend style="font-size: 26px">添加信息存证</legend>
+    </fieldset>
+    <form  class="layui-form" action="/add_storage/" method="post" id="add_storage_form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">存证文本</label>
+            <div class="layui-input-block">
+                <textarea type="text/plain" name="storage_text" id="storage_text"  placeholder="存证文本内容"
+                          class="layui-textarea"></textarea>
+            </div>
+        </div>
+            <label class="layui-form-label">存证图片</label>
+                <input type="file" name="img_input" id="img_input">
+                <input type="hidden" name="user_id" id="user_id" value="{{ request.session.user_id }}">
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button type="submit" class="layui-btn" lay-submit id="add_storage" lay-filter="add_storage">现在申请</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+     layui.use(['element','form','layer','upload', 'laydate'],function () {
+         var element = layui.element,
+            form = layui.form,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            $ = layui.jquery;
+
+         form.on("submit(add_storage)",function(data){
+             var formData = new FormData();
+             var storage_img
+             console.log($("#img_input")[0].files[0])
+             if ($("#img_input")[0].files[0]===undefined){
+                 storage_img = ''
+             }
+             else {
+                 storage_img = $("#img_input")[0].files[0];
+             }
+             formData.append('storage_img', storage_img);
+             formData.append('storage_text', $("#storage_text").val());
+             formData.append('user_id', $("#user_id").val());
+             formData.append('csrfmiddlewaretoken', '{{ csrf_token  }}');
+        	$.ajax({
+                url: "/add_storage/",
+                type:"POST",
+                data:formData,
+                contentType:false,
+                processData:false,
+                success: function (res) {
+                    if(res.code === 0){
+        			 layer.msg(res.msg,{icon:1,end:function(){window.location.reload();}});
+        		}
+        		else {
+        		    layer.msg(res.msg)
+                }
+                }
+        	});
+        	return false;
+     });
+  });
+</script>
+</body>
+</html>

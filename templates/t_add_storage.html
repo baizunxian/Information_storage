@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" class="x-admin-sm">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+	<title>注册</title>
+	<meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <link rel="stylesheet" href="/static/css/font.css">
+    <link rel="stylesheet" href="/static/css/login.css">
+	  <link rel="stylesheet" href="/static/css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="x-nav">
+            <span class="layui-breadcrumb">
+                <a href="">首页</a>
+                <a href="">存证管理</a>
+                <a>
+                    <cite>信息存证</cite></a>
+            </span>
+            <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right" onclick="location.reload()" title="刷新">
+                <i class="layui-icon layui-icon-refresh" style="line-height:30px"></i>
+            </a>
+        </div>
+<div class="wrapper" style="width: 900px;margin-top: 40px">
+    <fieldset class="layui-elem-field layui-field-title">
+        <legend style="font-size: 26px">添加信息存证</legend>
+    </fieldset>
+
+    <form method="post" action="" id="t_add_storage_form">
+        {% csrf_token %}
+        <div class="layui-form-item">
+            <label class="layui-form-label">选择学生:</label>
+    <div class="layui-input-block" name="single_select">
+        <div class="layui-form-select" style="width: 200px">
+            <div class="layui-select-title">
+                <input type="hidden" value="" name="user_id" id="user_id">
+                <input type="text" class="layui-input" placeholder="请输入学号查询"
+                       name="number" autocomplete="off" id="number">
+                <i class="layui-edge"></i>
+            </div>
+            <dl name="select_show" class="layui-anim layui-anim-upbit">
+                <dd lay-value="" class="layui-select-tips" style="text-align: center">
+                    <i class="layui-icon layui-icon-loading layui-icon layui-anim layui-anim-rotate layui-anim-loop"></i>
+                </dd>
+            </dl>
+        </div>
+    </div>
+        </div>        
+        <div class="layui-form-item">
+            <label class="layui-form-label">存证文本:</label>
+            <div class="layui-input-block">
+                <textarea type="text/plain" name="storage_text" id="storage_text" placeholder="存证文本内容"
+                          class="layui-textarea"></textarea>
+            </div>
+        </div>
+        <label class="layui-form-label">存证图片:</label>
+        <input type="file" id="img_input" name="img">
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button type="submit" class="layui-btn" lay-submit id="t_add_storage_form" lay-filter="t_add_storage_form">提交存证</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+     layui.use(['element','form','layer','upload', 'laydate'],function () {
+         var element = layui.element,
+            form = layui.form,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            $ = layui.jquery;
+
+         form.on("submit(t_add_storage_form)",function(data){
+             var formData = new FormData();
+             formData.append('storage_img', $("#img_input")[0].files[0]);
+             formData.append('storage_text', $("#storage_text").val());
+             formData.append('user_id', $("#user_id").val());
+             formData.append('number', $("#number").val());
+             formData.append('csrfmiddlewaretoken', '{{ csrf_token  }}');
+        	$.ajax({
+                url: "/t_add_storage/",
+                type:"POST",
+                data:formData,
+                contentType:false,
+                processData:false,
+                success: function (res) {
+                    if(res.code === 0){
+        			 layer.msg(res.msg,{icon:1,end:function(){window.location.reload();}});
+        		}
+        		else {
+        		    layer.msg(res.msg)
+                }
+                }
+        	});
+        	return false;
+     });
+
+          //select模糊搜索
+        function vagueselect(obj, type) {
+            var number = obj.find('[name="number"]')
+            var select_show = obj.find('[name="select_show"]')
+
+            function getdataList() {
+                var parms = new Object();
+                parms["number"] = number.val();
+                parms["csrfmiddlewaretoken"] = $("[name = 'csrfmiddlewaretoken']").val()
+                $.ajax({
+                    cache: true,
+                    type: "POST",
+                    url: '/search_by_number/',
+                    data: parms,
+                    async: false,
+                    success: function (data) {
+                        var json = data;
+                        var html
+                        if (type == 'multiple') {
+                            number.prev().children().each(function () {
+                                for (var i = 0; i < json.data_list.length; i++) {
+                                    if (json.data_list[i].ID == $(this).attr('belong_id')) {
+                                        //删除已选选项
+                                        json.data_list.splice(i, 1)
+                                    }
+                                }
+                            })
+                        }
+                        if (json.data_list.length > 0) {
+                            //将获得的数据填充到下拉的数据框里
+                            select_show.children().first().hide().nextAll().remove()
+                            for (var i = 0; i < json.data_list.length; i++) {
+                                html = '<dd lay-value="' + json.data_list[i].ID + '" class="">'+ json.data_list[i].number +'('+ json.data_list[i].name + ')</dd>';
+                                select_show.append(html)
+                            }
+                        }
+                        else {
+                            if (parms["number"].length > 0) {
+                                //如果为搜索到匹配项显示
+                                select_show.children().first().hide().nextAll().remove()
+                                html = '<dd lay-value="无" class="layui-select-tips">无该匹配项</dd>';
+                                select_show.append(html)
+                            }
+                            else {
+                                //如果未输入关键字复原样式
+                                select_show.children().first().show().nextAll().remove()
+                            }
+                        }
+                    },
+                    error: function (request) {
+                        layer.msg("Connection error", {icon: 2});
+                    }
+                });
+            }
+
+            //输入框聚焦事件
+            number.focus(function () {
+                obj.find('.layui-form-select').addClass('layui-form-selected')
+                getdataList()
+            })
+            //输入框失去焦点事件
+            number.blur(function () {
+                var input_dom = this
+                $(document).on('click', function (event) {
+                    var dom = select_show[0]
+                    if (event.target !== input_dom && event.target !== dom) {
+                        obj.find('.layui-form-select').removeClass('layui-form-selected')
+                    }
+                })
+            })
+            //当按键松开时
+            number.keyup(function () {
+                getdataList()
+            })
+            if (type == 'single') {
+                obj.delegate('dd', 'click', function () {
+                    if ($(this).index() > 0) {
+                        $(this).siblings().removeClass('layui-this')
+                        $(this).addClass('layui-this')
+                        number.val($(this).text())
+                        {#number.attr('id', $(this).attr('lay-value'))#}
+                        number.attr('value', $(this).attr('lay-value'))
+                        $('#user_id').attr('value', $(this).attr('lay-value'))
+                        obj.find('.layui-form-select').removeClass('layui-form-selected')
+                    }
+                });
+            }
+            else if (type == 'multiple') {
+                //为选择项绑定点击事件
+                obj.delegate('dd', 'click', function () {
+                    if ($(this).index() > 0 && $(this).text() !== '无该匹配项') {
+                        $(this).siblings().removeClass('layui-this')
+                        $(this).addClass('layui-this')
+                        var temp = '<a class="select_a" belong_id="' + $(this).attr('lay-value') + '" ><i class="layui-icon" style="cursor: pointer;" name="select_del">ဆ</i>' + $(this).text() + '</a>'
+                        console.log(temp)
+                        number.prev().append(temp)
+                        console.log(number.prev())
+                        select_adaption(number)
+                        obj.find('.layui-form-select').removeClass('layui-form-selected')
+                        obj.parent().parent().next().find('input').attr('disabled', false)
+                        obj.parent().parent().next().find('select').attr('disabled', false)
+                        form.render()
+                    }
+                });
+            }
+        }
+
+        //删除选项统一接口
+        $('body').delegate('[name="select_del"]', 'click', function () {
+            var select_input = $(this).parent().parent().next()
+            if ($(this).parent().siblings().length == 0) {
+                $(this).parents(':eq(5)').nextAll().find('input').attr('disabled', true)
+                $(this).parents(':eq(6)').next().find('input').attr('disabled', true)
+                $(this).parents(':eq(6)').next().find('select').attr('disabled', true)
+                form.render()
+            }
+            $(this).parent().remove()
+            select_adaption(select_input)
+        });
+
+        vagueselect($('[name="single_select"]'), 'single')
+  });
+</script>
+</body>
+</html>

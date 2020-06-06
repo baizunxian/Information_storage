@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+    <head>
+        <meta charset="UTF-8">
+        <title>修改密码</title>
+        <meta name="renderer" content="webkit">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <link rel="stylesheet" href="/static/css/font.css">
+        <link rel="stylesheet" href="/static/css/xadmin.css">
+        <script src="/static/lib/layui/layui.js" charset="utf-8"></script>
+        <script type="text/javascript" src="/static/js/xadmin.js"></script>
+    </head>
+<body>
+<div class="wrapper" style="width: 900px;margin-top: 40px">
+    <fieldset class="layui-elem-field layui-field-title">
+        <legend style="font-size: 26px">修改密码</legend>
+    </fieldset>
+    <form id="updatapwd_form" class="layui-form" action="/updatapwd_form/" method="post">
+        <div class="layui-form-item">
+            <label class="layui-form-label">旧密码</label>
+            <div class="layui-input-block">
+                <input type="hidden" name="user_id" value={{ request.session.user_id }}>
+                <input type="password" name="oldpwd" placeholder="旧密码" required lay-verify="required"
+                       class="layui-input" value="">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">新密码</label>
+            <div class="layui-input-block">
+                <input type="password" name="newpwd" id="newpwd" placeholder="输入新密码" required lay-verify="required"
+                       class="layui-input" value="">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">重复新密码</label>
+            <div class="layui-input-block">
+                <input type="password" name="renewpwd" id="renewpwd" required lay-verify="required" placeholder="再次输入新密码"
+                       autocomplete="off" class="layui-input" value="">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="updatapwd" id="updatapwd">修改</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+        layui.use(['form', 'layer'], function(){
+          var form = layui.form,
+              $ = layui.jquery;
+          //监听提交
+          form.on('submit(updatapwd)', function(){
+              var newpwd = $('#newpwd').val();
+              var renewpwd = $('#renewpwd').val();
+              if (newpwd  == renewpwd ){
+                   $.post('/updatepwd/',$("#updatapwd_form").serialize()+'&'+$.param({csrfmiddlewaretoken:'{{ csrf_token }}'}),function(res){
+                if (res.code === 0){
+                    layer.msg(res.msg,{icon:1})
+                }
+                else {
+                    layer.msg(res.msg)
+                }
+            });
+              }
+              else{
+                  layer.msg('两次输入的新密码不一致！')
+              }
+            return false;
+          });
+        });
+    </script>
+</body>
+</html>
